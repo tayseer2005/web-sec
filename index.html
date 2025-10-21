@@ -1,106 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop Store (Burp-ready)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop Store</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
-    body { background: #f8f9fa; color: #333; padding:20px }
-    header { background-color: #2c3e50; color: white; padding: 15px 30px; display:flex; justify-content:space-between; align-items:center }
-    .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top:20px }
-    .product { background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06); text-align:center }
-    .price { color:#27ae60; font-weight:700; margin:8px 0 }
-    .btn { background:#27ae60;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer }
-    .small{font-size:13px;color:#666;margin-top:12px}
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Poppins,sans-serif}
+    body{background:#f8f9fa;color:#333}
+    header{background:#2c3e50;color:#fff;padding:15px 30px;display:flex;justify-content:space-between;align-items:center}
+    header h1{font-size:24px}
+    nav a{color:#fff;text-decoration:none;margin:0 10px;font-weight:bold}
+    nav a:hover{text-decoration:underline}
+    .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;padding:40px}
+    .product{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;transition:0.3s}
+    .product:hover{transform:translateY(-5px)}
+    .product img{width:100%;height:200px;object-fit:cover}
+    .product-content{padding:15px;text-align:center}
+    .product-content h3{margin-bottom:10px}
+    .price{color:#27ae60;font-weight:bold;margin-bottom:10px}
+    .btn{background:#27ae60;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer}
+    .btn:hover{background:#219150}
+    footer{background:#2c3e50;color:#fff;text-align:center;padding:15px;margin-top:40px}
   </style>
 </head>
 <body>
-  <header>
-    <h1>Shop Store</h1>
-    <nav>
-      <a href="cart.html" style="background:#2196f3;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none">🛒 View Cart</a>
-    </nav>
-  </header>
+<header>
+  <h1>Shop Store</h1>
+  <nav>
+    <a href="#">Home</a>
+    <a href="#" id="cartBtn">🛒 View Cart</a>
+  </nav>
+</header>
 
-  <section class="products">
-    <div class="product">
+<section class="products">
+  <div class="product">
+    <img src="https://via.placeholder.com/300x200" alt="">
+    <div class="product-content">
       <h3>Wireless Headphones</h3>
-      <p class="price">$25.00</p>
-      <button class="btn" onclick="addToCartAndGo('Wireless Headphones', 25)">Add to Cart & Go</button>
+      <p class="price">$25</p>
+      <button class="btn" onclick="addToCart('Wireless Headphones',25)">Add to Cart</button>
     </div>
-
-    <div class="product">
+  </div>
+  <div class="product">
+    <img src="https://via.placeholder.com/300x200" alt="">
+    <div class="product-content">
       <h3>Smart Watch</h3>
-      <p class="price">$40.00</p>
-      <button class="btn" onclick="addToCartAndGo('Smart Watch', 40)">Add to Cart & Go</button>
+      <p class="price">$40</p>
+      <button class="btn" onclick="addToCart('Smart Watch',40)">Add to Cart</button>
     </div>
+  </div>
+</section>
 
-    <div class="product">
-      <h3>Mechanical Keyboard</h3>
-      <p class="price">$30.00</p>
-      <button class="btn" onclick="addToCartAndGo('Mechanical Keyboard', 30)">Add to Cart & Go</button>
-    </div>
+<footer>© 2025 Shop Store</footer>
 
-    <div class="product">
-      <h3>Gaming Mouse</h3>
-      <p class="price">$20.00</p>
-      <button class="btn" onclick="addToCartAndGo('Gaming Mouse', 20)">Add to Cart & Go</button>
-    </div>
-  </section>
+<script>
+const CART_KEY='cart';
+function addToCart(name,price){
+  let cart=JSON.parse(localStorage.getItem(CART_KEY)||'[]');
+  cart.push({name,price});
+  localStorage.setItem(CART_KEY,JSON.stringify(cart));
+  alert(`${name} added to cart!`);
 
-  <p class="small">POST target (for interception): <strong id="postTarget">http://127.0.0.1:8080/anything</strong></p>
+  // 🔥 POST قابل للاعتراض
+  fetch("https://tayseer2005.github.io/web-sec1/",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({product:name,price})
+  }).catch(()=>{});
+}
 
-  <script>
-    // CONFIG: عدّل هذا السطر إذا عندك بروكسي/endpoint مختلف
-    const POST_URL = 'https://tayseer2005.github.io/web-sec1/
-
-    // وظائف التخزين المحلية (محلية فقط)
-    function loadCartLocal(){ return JSON.parse(localStorage.getItem('cart') || '[]'); }
-    function saveCartLocal(c){ localStorage.setItem('cart', JSON.stringify(c)); }
-
-    // دالة تضيف إلى العربة ثم ترسل POST وتنتظر رد السيرفر (أو رد Burp)
-    async function addToCartAndGo(name, price){
-      // أولاً نحفظ عنصر محلياً (so cart shows if server rejected)
-      const localCart = loadCartLocal();
-      localCart.push({ name, price });
-      saveCartLocal(localCart);
-
-      // نجهز payload للإرسال / للاعتراض
-      const payload = {
-        action: 'add_item',
-        item: { name, price },
-        clientTimestamp: new Date().toISOString()
-      };
-
-      // نرسل الطلب وننتظر الرد — هذا يسمح لـ Burp بالاعتراض وتحرير الطلب، ثم إرسال رد (يمكنك في Burp "Return a custom response")
-      try {
-        const resp = await fetch(POST_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          // وضع credentials/mode إذا تحتاجه
-        });
-
-        // إذا استلمنا JSON من الـ endpoint (مثلاً Burp أعاد JSON مُعدّل)، نخزّنه كـ server_cart
-        try {
-          const j = await resp.json();
-          // نتوقع أن رد السيرفر يحتوي على حقل server_cart أو items
-          // إذا لم يكن موجودًا، نخزن الرد بأكمله تحت server_cart ليتم استعماله في cart.html
-          localStorage.setItem('server_cart', JSON.stringify(j));
-        } catch (e) {
-          // لو الرد ليس JSON، نتجاهل — لكن نحتفظ بالcart المحلي
-          console.warn('No JSON response or failed to parse JSON from POST response', e);
-        }
-      } catch (err) {
-        // قد يفشل الاتصال (مثلاً POST_URL غير متاح) — تجاهل الخطأ لأن الهدف تمرير الطلب إلى Burp
-        console.warn('background POST failed or intercepted (this may be expected):', err);
-      }
-
-      // الآن نذهب إلى صفحة العربة (cart.html)
-      window.location.href = 'https://tayseer2005.github.io/web-sec1/';
-    }
-  </script>
+// رابط الكارت
+document.getElementById("cartBtn").addEventListener("click",()=>{
+  window.location.href="https://tayseer2005.github.io/web-sec1/";
+});
+</script>
 </body>
 </html>
-
