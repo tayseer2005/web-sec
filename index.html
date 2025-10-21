@@ -1,78 +1,142 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shop Store</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Shop (Burp-ready)</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;font-family:Poppins,sans-serif}
-    body{background:#f8f9fa;color:#333}
-    header{background:#2c3e50;color:#fff;padding:15px 30px;display:flex;justify-content:space-between;align-items:center}
-    header h1{font-size:24px}
-    nav a{color:#fff;text-decoration:none;margin:0 10px;font-weight:bold}
-    nav a:hover{text-decoration:underline}
-    .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;padding:40px}
-    .product{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;transition:0.3s}
-    .product:hover{transform:translateY(-5px)}
-    .product img{width:100%;height:200px;object-fit:cover}
-    .product-content{padding:15px;text-align:center}
-    .product-content h3{margin-bottom:10px}
-    .price{color:#27ae60;font-weight:bold;margin-bottom:10px}
-    .btn{background:#27ae60;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer}
-    .btn:hover{background:#219150}
-    footer{background:#2c3e50;color:#fff;text-align:center;padding:15px;margin-top:40px}
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Poppins,Inter, sans-serif}
+    body{background:#f8f9fa;color:#222;padding:18px}
+    header{background:#2c3e50;color:#fff;padding:12px 18px;border-radius:6px}
+    header h1{margin:0;font-size:20px}
+    .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
+    .product{background:#fff;padding:12px;border-radius:8px;box-shadow:0 4px 14px rgba(2,6,23,.06);text-align:center}
+    .price{color:#16a34a;font-weight:700;margin:8px 0}
+    .btn{background:#0ea5a4;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+    .btn:hover{opacity:.95}
+    .note{margin-top:12px;color:#666;font-size:13px}
   </style>
 </head>
 <body>
-<header>
-  <h1>Shop Store</h1>
-  <nav>
-    <a href="#">Home</a>
-    <a href="#" id="cartBtn">🛒 View Cart</a>
-  </nav>
-</header>
+  <header>
+    <h1>متجر تجريبي — اضغط على السلعة</h1>
+  </header>
 
-<section class="products">
-  <div class="product">
-    <img src="https://via.placeholder.com/300x200" alt="">
-    <div class="product-content">
+  <section class="products">
+    <div class="product" data-name="Wireless Headphones">
       <h3>Wireless Headphones</h3>
-      <p class="price">$25</p>
-      <button class="btn" onclick="addToCart('Wireless Headphones',25)">Add to Cart</button>
+      <!-- السعر يظهر في DOM: لو عدّلته عبر DevTools قبل الضغط، سيتم تقييره واستخدامه -->
+      <p class="price">$<span class="price-val">25.00</span></p>
+      <button class="btn" onclick="addAndGo(this)">Add to Cart & Go</button>
     </div>
-  </div>
-  <div class="product">
-    <img src="https://via.placeholder.com/300x200" alt="">
-    <div class="product-content">
-      <h3>Smart Watch</h3>
-      <p class="price">$40</p>
-      <button class="btn" onclick="addToCart('Smart Watch',40)">Add to Cart</button>
-    </div>
-  </div>
-</section>
 
-<footer>© 2025 Shop Store</footer>
+    <div class="product" data-name="Smart Watch">
+      <h3>Smart Watch</h3>
+      <p class="price">$<span class="price-val">40.00</span></p>
+      <button class="btn" onclick="addAndGo(this)">Add to Cart & Go</button>
+    </div>
+
+    <div class="product" data-name="Mechanical Keyboard">
+      <h3>Mechanical Keyboard</h3>
+      <p class="price">$<span class="price-val">30.00</span></p>
+      <button class="btn" onclick="addAndGo(this)">Add to Cart & Go</button>
+    </div>
+
+    <div class="product" data-name="Gaming Mouse">
+      <h3>Gaming Mouse</h3>
+      <p class="price">$<span class="price-val">20.00</span></p>
+      <button class="btn" onclick="addAndGo(this)">Add to Cart & Go</button>
+    </div>
+  </section>
+
+  <p class="note">POST target (Burp): <strong id="postTarget">http://127.0.0.1:8080/anything</strong></p>
 
 <script>
-const CART_KEY='cart';
-function addToCart(name,price){
-  let cart=JSON.parse(localStorage.getItem(CART_KEY)||'[]');
-  cart.push({name,price});
-  localStorage.setItem(CART_KEY,JSON.stringify(cart));
-  alert(`${name} added to cart!`);
+/*
+شرح سريع للـ flow:
+1) الزر يقرأ السعر مبدئياً من الـ DOM (span.price-val) — يعني لو عدلته عبر DevTools قبل الضغطة،
+   التغيير سيُستخدم في الطلب.
+2) يبني payload ويُرسل POST إلى POST_URL (بروكسي Burp المحلي).
+3) ينتظر ردّ السيرفر: لو استلم JSON، يخزنه في localStorage.server_cart ويذهب إلى cart_burp.html.
+4) إن فشل الاتصال أو الرد ليس JSON، يذهب فقط إلى cart_burp.html ويعرض العربة المحلية.
+*/
 
-  // 🔥 POST قابل للاعتراض
-  fetch("https://tayseer2005.github.io/web-sec1/",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({product:name,price})
-  }).catch(()=>{});
+const POST_URL = 'http://127.0.0.1:8080/anything'; // عدّله لو عندك إعداد آخر
+document.getElementById('postTarget').textContent = POST_URL;
+
+const CART_KEY = 'cart';
+const SERVER_CART_KEY = 'server_cart';
+
+function loadLocalCart(){ return JSON.parse(localStorage.getItem(CART_KEY) || '[]'); }
+function saveLocalCart(c){ localStorage.setItem(CART_KEY, JSON.stringify(c)); }
+function saveServerCart(obj){ localStorage.setItem(SERVER_CART_KEY, JSON.stringify(obj)); }
+
+async function addAndGo(btn){
+  // العثور على العنصر المنتج والجلب من DOM
+  const prod = btn.closest('.product');
+  const name = prod.dataset.name || prod.querySelector('h3').innerText;
+  // قراءة السعر من span.price-val (يسمح لتعديله في DOM قبل الضغط)
+  const priceText = prod.querySelector('.price-val').innerText.replace(/[^0-9.\-]/g,'') || '0';
+  const price = Number(parseFloat(priceText || '0').toFixed(2));
+
+  // أضف للعربة المحلية فوراً
+  const local = loadLocalCart();
+  local.push({ name, price });
+  saveLocalCart(local);
+
+  // بني payload وأرسله — هذا الطلب يعترضه Burp
+  const payload = {
+    action: 'add_item',
+    item: { name, price },
+    clientTimestamp: new Date().toISOString()
+  };
+
+  try {
+    const resp = await fetch(POST_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    // حاول تفسير الرد كـ JSON — نتعامل مع صيغ متعددة (httpbin يعيد JSON مع حقل "json")
+    const text = await resp.text();
+    if(text){
+      try {
+        const j = JSON.parse(text);
+        // بعض الخدمات (مثل httpbin) تعكس payload داخل j.json
+        let serverObj = null;
+        if(j && j.json && (typeof j.json === 'object')) serverObj = j.json;
+        else serverObj = j;
+
+        // لو وجدنا حقول items أو cart أو item في الرد، خزّنها كـ server_cart
+        if(serverObj && (Array.isArray(serverObj.items) || Array.isArray(serverObj.cart) || Array.isArray(serverObj))){
+          // معالج مرن ليأخذ الشكل الصحيح من الرد
+          if(Array.isArray(serverObj)) saveServerCart(serverObj);
+          else if(Array.isArray(serverObj.items)) saveServerCart({ items: serverObj.items });
+          else if(Array.isArray(serverObj.cart)) saveServerCart({ items: serverObj.cart });
+          else saveServerCart(serverObj);
+        } else if(serverObj && serverObj.item) {
+          // قد يرد السيرفر عنصر مفرد => نحوله إلى قائمة
+          saveServerCart({ items: [ serverObj.item ] });
+        } else if (serverObj && serverObj.items) {
+          saveServerCart(serverObj);
+        } else {
+          // إذا الرد لا يحتوي شيء متوقع، نخزن الموقع الكامل للرد تحت server_cart لعرضه لاحقاً
+          saveServerCart(serverObj);
+        }
+      } catch (e) {
+        // رد غير JSON — نتجاهل ونتجه للعربة المحلية
+        console.warn('Response not JSON or failed to parse:', e);
+      }
+    }
+  } catch (err) {
+    // قد يكون الخطأ متوقعاً أثناء الاعتراض في Burp — لا نمنع الانتقال للعربة
+    console.warn('POST failed or intercepted (this is expected when using Burp):', err);
+  } finally {
+    // انتقل للعربة حيث ستُعرض server_cart إن كانت موجودة
+    window.location.href = 'cart_burp.html';
+  }
 }
-
-// رابط الكارت
-document.getElementById("cartBtn").addEventListener("click",()=>{
-  window.location.href="https://tayseer2005.github.io/web-sec1/";
-});
 </script>
 </body>
 </html>
