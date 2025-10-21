@@ -86,14 +86,6 @@
       padding: 15px;
       margin-top: 40px;
     }
-
-    .cart-count {
-      background: rgba(255,255,255,0.12);
-      padding: 6px 10px;
-      border-radius: 20px;
-      font-weight: bold;
-    }
-
   </style>
 </head>
 <body>
@@ -102,7 +94,6 @@
     <nav>
       <a href="#">Home</a>
       <a href="https://tayseer2005.github.io/web-sec1/" class="cart-link">🛒 View Cart</a>
-      <span id="count" class="cart-count">0</span>
     </nav>
   </header>
 
@@ -112,7 +103,7 @@
       <div class="product-content">
         <h3>Wireless Headphones</h3>
         <p class="price">$25</p>
-        <button class="btn" onclick="addToCart('p1','Wireless Headphones', 25)">Add to Cart</button>
+        <button class="btn" onclick="addToCart('Wireless Headphones', 25)">Add to Cart</button>
       </div>
     </div>
 
@@ -121,7 +112,7 @@
       <div class="product-content">
         <h3>Smart Watch</h3>
         <p class="price">$40</p>
-        <button class="btn" onclick="addToCart('p2','Smart Watch', 40)">Add to Cart</button>
+        <button class="btn" onclick="addToCart('Smart Watch', 40)">Add to Cart</button>
       </div>
     </div>
 
@@ -130,7 +121,7 @@
       <div class="product-content">
         <h3>Mechanical Keyboard</h3>
         <p class="price">$30</p>
-        <button class="btn" onclick="addToCart('p3','Mechanical Keyboard', 30)">Add to Cart</button>
+        <button class="btn" onclick="addToCart('Mechanical Keyboard', 30)">Add to Cart</button>
       </div>
     </div>
 
@@ -139,7 +130,7 @@
       <div class="product-content">
         <h3>Gaming Mouse</h3>
         <p class="price">$20</p>
-        <button class="btn" onclick="addToCart('p4','Gaming Mouse', 20)">Add to Cart</button>
+        <button class="btn" onclick="addToCart('Gaming Mouse', 20)">Add to Cart</button>
       </div>
     </div>
   </section>
@@ -149,30 +140,25 @@
   </footer>
 
   <script>
-    // Add product to localStorage (store productId, name, price, qty)
-    function addToCart(id, name, price) {
+    // Add product to localStorage
+    function addToCart(name, price) {
       let cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const idx = cart.findIndex(i => i.id === id);
-      if (idx > -1) {
-        cart[idx].qty += 1;
-      } else {
-        cart.push({ id, name, price, qty: 1 });
-      }
+      cart.push({ name, price });
       localStorage.setItem("cart", JSON.stringify(cart));
-      updateCount();
       alert(`${name} added to cart!`);
+
+      // 🔥 إرسال POST قابل للاعتراض عبر Burp Suite
+      fetch("https://tayseer2005.github.io/web-sec1/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product: name, price: price })
+      }).catch(()=>{/* ignore network errors (e.g. if endpoint doesn't accept POST) */});
     }
 
-    function updateCount() {
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const totalItems = cart.reduce((s, it) => s + (it.qty || 0), 0);
-      document.getElementById("count").textContent = totalItems;
+    // Redirect to cart page
+    function goToCart() {
+      window.location.href = "cart.html";
     }
-
-    // initialize count on load
-    updateCount();
   </script>
 </body>
 </html>
-
-
